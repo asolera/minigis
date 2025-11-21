@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, FileJson, Layers, Eye, EyeOff, Trash2, Maximize, MoreVertical } from 'lucide-react';
+import { Upload, FileJson, Layers, Eye, EyeOff, Trash2, Maximize, MoreVertical, Download, FolderOpen } from 'lucide-react';
 import useLayerStore from '../../store/useLayerStore';
 import { parseCSV, loadShapefile, createLayerFromGeoJSON } from '../../utils/importers';
 import GeoJsonModal from '../Modals/GeoJsonModal';
@@ -17,7 +17,9 @@ const LeftSidebar = () => {
         triggerZoomToLayer,
         moveLayerUp,
         moveLayerDown,
-        renameLayer
+        renameLayer,
+        mapViewState,
+        setProjectState
     } = useLayerStore();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,12 +27,24 @@ const LeftSidebar = () => {
 
     const csvInputRef = useRef(null);
     const shpInputRef = useRef(null);
+    const projectInputRef = useRef(null);
 
     const handleFileImport = async (e, type) => {
         const file = e.target.files[0];
         if (!file) return;
 
         try {
+            if (type === 'project') {
+                const text = await file.text();
+                const projectData = JSON.parse(text);
+                if (projectData.layers && Array.isArray(projectData.layers)) {
+                    setProjectState(projectData);
+                } else {
+                    alert('Invalid project file.');
+                }
+                return;
+            }
+
             let geojson;
             if (type === 'csv') {
                 geojson = await parseCSV(file);
@@ -47,6 +61,22 @@ const LeftSidebar = () => {
         } finally {
             e.target.value = ''; // Reset input
         }
+    };
+
+    const handleExportProject = () => {
+        const projectData = {
+            layers,
+            mapViewState
+        };
+        const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'minigis-project.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     const handleUrlAdd = (geojson, name) => {
@@ -122,11 +152,18 @@ const LeftSidebar = () => {
                 className="hidden"
                 onChange={(e) => handleFileImport(e, 'shp')}
             />
+            <input
+                type="file"
+                ref={projectInputRef}
+                accept=".json"
+                className="hidden"
+                onChange={(e) => handleFileImport(e, 'project')}
+            />
 
             {/* Top: Tools */}
             <div className="p-4 border-b border-gray-200 bg-gray-50">
                 <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Tools</h2>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 mb-2">
                     <button
                         onClick={() => csvInputRef.current.click()}
                         className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 rounded hover:bg-blue-50 hover:border-blue-300 transition-colors group"
@@ -147,6 +184,22 @@ const LeftSidebar = () => {
                     >
                         <FileJson size={20} className="text-gray-600 group-hover:text-blue-600 mb-1" />
                         <span className="text-xs text-gray-600 group-hover:text-blue-600">GeoJSON</span>
+                    </button>
+                </div>
+
+                {/* Project Tools */}
+                <div className="grid grid-cols-2 gap-2">
+                    <button
+                        onClick={handleExportProject}
+                        className="flex items-center justify-center gap-2 p-2 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors text-xs text-gray-700"
+                    >
+                        <Download size={14} /> Export Project
+                    </button>
+                    <button
+                        onClick={() => projectInputRef.current.click()}
+                        className="flex items-center justify-center gap-2 p-2 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors text-xs text-gray-700"
+                    >
+                        <FolderOpen size={14} /> Import Project
                     </button>
                 </div>
             </div>
