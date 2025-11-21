@@ -119,18 +119,44 @@ const RightSidebar = () => {
                 )}
 
                 {/* Label Field */}
-                {selectedFeature && (
+                <div>
+                    <label className="block text-xs text-gray-600 mb-1">Label Field</label>
+                    <select
+                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
+                        value={selectedLayer.style?.labelField || ''}
+                        onChange={(e) => handleStyleChange('labelField', e.target.value)}
+                    >
+                        <option value="">None</option>
+                        {(() => {
+                            // Get properties from selected feature OR first feature in layer
+                            const properties = selectedFeature?.properties ||
+                                selectedLayer.source?.features?.[0]?.properties ||
+                                {};
+                            return Object.keys(properties).map(key => (
+                                <option key={key} value={key}>{key}</option>
+                            ));
+                        })()}
+                    </select>
+                </div>
+
+                {/* Label Placement */}
+                {selectedLayer.style?.labelField && (
                     <div>
-                        <label className="block text-xs text-gray-600 mb-1">Label Field</label>
+                        <label className="block text-xs text-gray-600 mb-1">Label Placement</label>
                         <select
                             className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                            value={selectedLayer.style?.labelField || ''}
-                            onChange={(e) => handleStyleChange('labelField', e.target.value)}
+                            value={selectedLayer.style?.labelPlacement || 'top-right'}
+                            onChange={(e) => handleStyleChange('labelPlacement', e.target.value)}
                         >
-                            <option value="">None</option>
-                            {Object.keys(selectedFeature.properties || {}).map(key => (
-                                <option key={key} value={key}>{key}</option>
-                            ))}
+                            <option value="center">Center</option>
+                            <option value="top">Top</option>
+                            <option value="bottom">Bottom</option>
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                            <option value="top-right">Top Right</option>
+                            <option value="top-left">Top Left</option>
+                            <option value="bottom-right">Bottom Right</option>
+                            <option value="bottom-left">Bottom Left</option>
                         </select>
                     </div>
                 )}

@@ -48,6 +48,41 @@ export const createLayerStyle = (layerStyle) => {
         });
     }
 
+    let textStyle;
+    if (layerStyle.labelField) {
+        let textAlign = 'center';
+        let textBaseline = 'middle';
+        let offsetX = 0;
+        let offsetY = 0;
+
+        const placement = layerStyle.labelPlacement || 'top-right'; // Default to top-right as requested
+        const offset = 12;
+
+        switch (placement) {
+            case 'center': break;
+            case 'top': textBaseline = 'bottom'; offsetY = -offset; break;
+            case 'bottom': textBaseline = 'top'; offsetY = offset; break;
+            case 'left': textAlign = 'right'; offsetX = -offset; break;
+            case 'right': textAlign = 'left'; offsetX = offset; break;
+            case 'top-right': textAlign = 'left'; textBaseline = 'bottom'; offsetX = offset; offsetY = -offset; break;
+            case 'top-left': textAlign = 'right'; textBaseline = 'bottom'; offsetX = -offset; offsetY = -offset; break;
+            case 'bottom-right': textAlign = 'left'; textBaseline = 'top'; offsetX = offset; offsetY = offset; break;
+            case 'bottom-left': textAlign = 'right'; textBaseline = 'top'; offsetX = -offset; offsetY = offset; break;
+        }
+
+        textStyle = new Text({
+            text: 'Label',
+            font: '12px sans-serif',
+            overflow: true,
+            fill: new Fill({ color: '#000' }),
+            stroke: new Stroke({ color: '#fff', width: 3 }),
+            textAlign,
+            textBaseline,
+            offsetX,
+            offsetY
+        });
+    }
+
     return new Style({
         image: imageStyle,
         fill: new Fill({
@@ -57,14 +92,7 @@ export const createLayerStyle = (layerStyle) => {
             color: hexToRgba(layerStyle.borderColor || layerStyle.color || '#3b82f6', opacity),
             width: 2
         }),
-        text: layerStyle.labelField ? new Text({
-            text: 'Label',
-            font: '12px sans-serif',
-            overflow: true,
-            fill: new Fill({ color: '#000' }),
-            stroke: new Stroke({ color: '#fff', width: 3 }),
-            offsetY: layerStyle.iconType === 'icon' ? -15 : 0 // Offset only for points
-        }) : undefined
+        text: textStyle
     });
 };
 
