@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
-import { Upload, FileJson, Layers, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { Upload, FileJson, Layers, Eye, EyeOff, Trash2, Maximize } from 'lucide-react';
 import useLayerStore from '../../store/useLayerStore';
 import { parseCSV, loadShapefile, createLayerFromGeoJSON } from '../../utils/importers';
 import GeoJsonModal from '../Modals/GeoJsonModal';
 
 const LeftSidebar = () => {
-    const { layers, toggleLayerVisibility, removeLayer, reorderLayers, selectedLayerId, selectLayer, addLayer } = useLayerStore();
+    const { layers, toggleLayerVisibility, removeLayer, reorderLayers, selectedLayerId, selectLayer, addLayer, triggerZoomToLayer } = useLayerStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const csvInputRef = useRef(null);
@@ -118,6 +118,13 @@ const LeftSidebar = () => {
                                     <span className="text-sm font-medium text-gray-700 truncate">{layer.name}</span>
                                 </div>
                                 <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); triggerZoomToLayer(layer.id); }}
+                                        className="p-1 text-gray-400 hover:text-blue-600 rounded hover:bg-blue-50"
+                                        title="Zoom to Layer"
+                                    >
+                                        <Maximize size={16} />
+                                    </button>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); toggleLayerVisibility(layer.id); }}
                                         className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100"

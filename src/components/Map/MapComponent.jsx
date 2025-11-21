@@ -16,12 +16,25 @@ const MapComponent = () => {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const layersRef = useRef({}); // Keep track of OL layers by ID
+  const [mapReady, setMapReady] = React.useState(false);
 
-  const { layers, selectLayer, selectFeature, selectedLayerId } = useLayerStore();
+  const {
+    layers,
+    selectLayer,
+    selectFeature,
+    selectedLayerId,
+    mapViewState,
+    setMapViewState,
+    zoomToLayerId,
+    triggerZoomToLayer
+  } = useLayerStore();
 
   // Initialize Map
   useEffect(() => {
     if (!mapRef.current) return;
+
+    const initialCenter = mapViewState.center || fromLonLat([-46.6333, -23.5505]);
+    const initialZoom = mapViewState.zoom || 12;
 
     mapInstance.current = new Map({
       target: mapRef.current,
@@ -32,8 +45,8 @@ const MapComponent = () => {
         }),
       ],
       view: new View({
-        center: fromLonLat([-46.6333, -23.5505]), // Sao Paulo
-        zoom: 12,
+        center: initialCenter,
+        zoom: initialZoom,
       }),
       controls: defaultControls({ zoom: false, rotate: false, attribution: false }),
     });
@@ -47,8 +60,6 @@ const MapComponent = () => {
       if (feature) {
         const layerId = feature.layer.get('id');
         const featureData = feature.feature.getProperties();
-        // Remove geometry from properties to avoid circular issues in store if needed, 
-        // but usually it's fine. Let's keep it simple.
 
         selectLayer(layerId);
         selectFeature({
@@ -57,23 +68,53 @@ const MapComponent = () => {
         });
       } else {
         selectFeature(null);
-        // Optional: Deselect layer if clicking empty space? 
-        // User said: "sempre que eu selecionar um ponto... aquela camada deverá ser automaticamente selecionada".
-        // Doesn't say what happens when clicking map. Let's keep selection if clicking map, or maybe deselect feature but keep layer?
-        // Let's deselect feature.
       }
     });
+
+    // Persist View State
+    mapInstance.current.on('moveend', () => {
+      const view = mapInstance.current.getView();
+      setMapViewState({
+        center: view.getCenter(),
+        zoom: view.getZoom()
+      });
+    });
+
+    setMapReady(true);
 
     return () => {
       if (mapInstance.current) {
         mapInstance.current.setTarget(null);
+        mapInstance.current = null;
+        setMapReady(false);
       }
     };
   }, []);
 
+  // Handle Zoom to Layer
+  useEffect(() => {
+    if (!zoomToLayerId || !mapInstance.current || !mapReady) return;
+
+    const layer = layersRef.current[zoomToLayerId];
+    if (layer) {
+      const source = layer.getSource();
+      if (source && source.getFeatures().length > 0) {
+        const extent = source.getExtent();
+        mapInstance.current.getView().fit(extent, {
+          padding: [50, 50, 50, 50],
+          duration: 1000,
+          maxZoom: 16
+        });
+      }
+    }
+
+    // Reset trigger
+    triggerZoomToLayer(null);
+  }, [zoomToLayerId, mapReady]);
+
   // Sync Layers
   useEffect(() => {
-    if (!mapInstance.current) return;
+    if (!mapInstance.current || !mapReady) return;
 
     const map = mapInstance.current;
     const currentLayerIds = Object.keys(layersRef.current);
@@ -93,33 +134,39 @@ const MapComponent = () => {
 
       if (!olLayer) {
         // Create new layer
-        const source = new VectorSource({
-          features: new GeoJSON().readFeatures(layerData.source, {
-            featureProjection: 'EPSG:3857'
-          })
-        });
+        try {
+          const source = new VectorSource({
+            features: new GeoJSON().readFeatures(layerData.source, {
+              featureProjection: 'EPSG:3857'
+            })
+          });
 
-        olLayer = new VectorLayer({
-          source: source,
-          zIndex: index + 1, // Base map is 0
-        });
+          olLayer = new VectorLayer({
+            source: source,
+            zIndex: index + 1, // Base map is 0
+          });
 
-        // Store ID on layer for click detection
-        olLayer.set('id', layerData.id);
+          // Store ID on layer for click detection
+          olLayer.set('id', layerData.id);
 
-        map.addLayer(olLayer);
-        layersRef.current[layerData.id] = olLayer;
+          map.addLayer(olLayer);
+          layersRef.current[layerData.id] = olLayer;
+        } catch (error) {
+          console.error("Failed to create layer:", layerData.name, error);
+        }
       }
 
       // Update properties
-      olLayer.setVisible(layerData.visible);
-      olLayer.setZIndex(index + 1);
+      if (olLayer) {
+        olLayer.setVisible(layerData.visible);
+        olLayer.setZIndex(index + 1);
 
-      // Update Style
-      olLayer.setStyle((feature) => getFeatureStyle(feature, layerData.style));
+        // Update Style
+        olLayer.setStyle((feature) => getFeatureStyle(feature, layerData.style));
+      }
     });
 
-  }, [layers]);
+  }, [layers, mapReady]);
 
   return (
     <div ref={mapRef} className="w-full h-full bg-gray-200" />
