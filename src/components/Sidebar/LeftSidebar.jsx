@@ -1,12 +1,27 @@
 import React, { useRef, useState } from 'react';
-import { Upload, FileJson, Layers, Eye, EyeOff, Trash2, Maximize } from 'lucide-react';
+import { Upload, FileJson, Layers, Eye, EyeOff, Trash2, Maximize, MoreVertical } from 'lucide-react';
 import useLayerStore from '../../store/useLayerStore';
 import { parseCSV, loadShapefile, createLayerFromGeoJSON } from '../../utils/importers';
 import GeoJsonModal from '../Modals/GeoJsonModal';
+import LayerContextMenu from './LayerContextMenu';
 
 const LeftSidebar = () => {
-    const { layers, toggleLayerVisibility, removeLayer, reorderLayers, selectedLayerId, selectLayer, addLayer, triggerZoomToLayer } = useLayerStore();
+    const {
+        layers,
+        toggleLayerVisibility,
+        removeLayer,
+        reorderLayers,
+        selectedLayerId,
+        selectLayer,
+        addLayer,
+        triggerZoomToLayer,
+        moveLayerUp,
+        moveLayerDown,
+        renameLayer
+    } = useLayerStore();
+
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [contextMenu, setContextMenu] = useState(null); // { x, y, layerId }
 
     const csvInputRef = useRef(null);
     const shpInputRef = useRef(null);
@@ -39,6 +54,42 @@ const LeftSidebar = () => {
         addLayer(newLayer);
     };
 
+    const handleContextMenu = (e, layer) => {
+        e.preventDefault();
+        setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            layerId: layer.id
+        });
+    };
+
+    const handleMenuAction = (action, layerId, value) => {
+        switch (action) {
+            case 'zoom':
+                triggerZoomToLayer(layerId);
+                break;
+            case 'toggle':
+                toggleLayerVisibility(layerId);
+                break;
+            case 'delete':
+                if (window.confirm('Are you sure you want to delete this layer?')) {
+                    removeLayer(layerId);
+                }
+                break;
+            case 'moveUp':
+                moveLayerUp(layerId);
+                break;
+            case 'moveDown':
+                moveLayerDown(layerId);
+                break;
+            case 'rename':
+                renameLayer(layerId, value);
+                break;
+            default:
+                break;
+        }
+    };
+
     return (
         <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full shadow-lg z-10">
             <GeoJsonModal
@@ -46,6 +97,16 @@ const LeftSidebar = () => {
                 onClose={() => setIsModalOpen(false)}
                 onAdd={handleUrlAdd}
             />
+
+            {contextMenu && (
+                <LayerContextMenu
+                    x={contextMenu.x}
+                    y={contextMenu.y}
+                    layer={layers.find(l => l.id === contextMenu.layerId)}
+                    onClose={() => setContextMenu(null)}
+                    onAction={handleMenuAction}
+                />
+            )}
 
             <input
                 type="file"
@@ -109,6 +170,7 @@ const LeftSidebar = () => {
                                     : 'bg-white border-gray-200 hover:border-gray-300'
                                     }`}
                                 onClick={() => selectLayer(layer.id)}
+                                onContextMenu={(e) => handleContextMenu(e, layer)}
                             >
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <span
@@ -132,10 +194,10 @@ const LeftSidebar = () => {
                                         {layer.visible ? <Eye size={16} /> : <EyeOff size={16} />}
                                     </button>
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); removeLayer(layer.id); }}
-                                        className="p-1 text-gray-400 hover:text-red-600 rounded hover:bg-red-50"
+                                        onClick={(e) => { e.stopPropagation(); handleContextMenu(e, layer); }}
+                                        className="p-1 text-gray-400 hover:text-gray-700 rounded hover:bg-gray-100"
                                     >
-                                        <Trash2 size={16} />
+                                        <MoreVertical size={16} />
                                     </button>
                                 </div>
                             </li>

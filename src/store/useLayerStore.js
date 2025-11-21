@@ -28,6 +28,28 @@ const useLayerStore = create(
 
             reorderLayers: (newOrder) => set({ layers: newOrder }),
 
+            moveLayerUp: (id) => set((state) => {
+                const index = state.layers.findIndex(l => l.id === id);
+                if (index <= 0) return state; // Already at top
+                const newLayers = [...state.layers];
+                [newLayers[index - 1], newLayers[index]] = [newLayers[index], newLayers[index - 1]];
+                return { layers: newLayers };
+            }),
+
+            moveLayerDown: (id) => set((state) => {
+                const index = state.layers.findIndex(l => l.id === id);
+                if (index === -1 || index === state.layers.length - 1) return state; // Already at bottom
+                const newLayers = [...state.layers];
+                [newLayers[index + 1], newLayers[index]] = [newLayers[index], newLayers[index + 1]];
+                return { layers: newLayers };
+            }),
+
+            renameLayer: (id, newName) => set((state) => ({
+                layers: state.layers.map((l) =>
+                    l.id === id ? { ...l, name: newName } : l
+                )
+            })),
+
             selectLayer: (id) => set({ selectedLayerId: id }),
 
             selectFeature: (feature) => set({ selectedFeature: feature }),
