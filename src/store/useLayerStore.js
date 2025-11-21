@@ -57,6 +57,14 @@ const useLayerStore = create(
                 mapViewState: newState.mapViewState || { center: null, zoom: null }
             }),
 
+            resetProject: () => set({
+                layers: [],
+                selectedLayerId: null,
+                selectedFeature: null,
+                mapViewState: { center: null, zoom: null },
+                zoomToLayerId: null
+            }),
+
             selectLayer: (id) => set({ selectedLayerId: id }),
 
             selectFeature: (feature) => set({ selectedFeature: feature }),

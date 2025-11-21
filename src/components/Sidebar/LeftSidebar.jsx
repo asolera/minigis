@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, FileJson, Layers, Eye, EyeOff, Trash2, Maximize, MoreVertical, Download, FolderOpen } from 'lucide-react';
+import { Upload, FileJson, Layers, Eye, EyeOff, Trash2, Maximize, MoreVertical, Download, FolderOpen, FilePlus } from 'lucide-react';
 import useLayerStore from '../../store/useLayerStore';
 import { parseCSV, loadShapefile, createLayerFromGeoJSON } from '../../utils/importers';
 import GeoJsonModal from '../Modals/GeoJsonModal';
@@ -19,7 +19,8 @@ const LeftSidebar = () => {
         moveLayerDown,
         renameLayer,
         mapViewState,
-        setProjectState
+        setProjectState,
+        resetProject
     } = useLayerStore();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -77,6 +78,12 @@ const LeftSidebar = () => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    };
+
+    const handleNewProject = () => {
+        if (window.confirm('Are you sure you want to create a new project? All unsaved changes will be lost.')) {
+            resetProject();
+        }
     };
 
     const handleUrlAdd = (geojson, name) => {
@@ -188,7 +195,14 @@ const LeftSidebar = () => {
                 </div>
 
                 {/* Project Tools */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
+                    <button
+                        onClick={handleNewProject}
+                        className="flex items-center justify-center gap-2 p-2 bg-red-50 border border-red-200 rounded hover:bg-red-100 transition-colors text-xs text-red-700"
+                        title="New Project (Reset)"
+                    >
+                        <FilePlus size={14} /> New
+                    </button>
                     <button
                         onClick={handleExportProject}
                         className="flex items-center justify-center gap-2 p-2 bg-gray-100 border border-gray-200 rounded hover:bg-gray-200 transition-colors text-xs text-gray-700"
