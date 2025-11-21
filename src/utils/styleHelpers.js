@@ -90,7 +90,7 @@ export const createLayerStyle = (layerStyle) => {
         }),
         stroke: new Stroke({
             color: hexToRgba(layerStyle.borderColor || layerStyle.color || '#3b82f6', opacity),
-            width: 2
+            width: layerStyle.borderWidth || 2
         }),
         text: textStyle
     });

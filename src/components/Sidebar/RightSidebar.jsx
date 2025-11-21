@@ -70,18 +70,47 @@ const RightSidebar = () => {
                     />
                 </div>
 
-                {/* Radius (Point only) */}
-                <div>
-                    <label className="block text-xs text-gray-600 mb-1">Point Radius: {selectedLayer.style?.radius || 6}px</label>
-                    <input
-                        type="range"
-                        min="2"
-                        max="20"
-                        value={selectedLayer.style?.radius || 6}
-                        onChange={(e) => handleStyleChange('radius', parseInt(e.target.value))}
-                        className="w-full"
-                    />
-                </div>
+                {/* Radius (Point only) or Border Width (Polygon) */}
+                {(() => {
+                    const firstFeature = selectedLayer.source?.features?.[0];
+                    const geometryType = firstFeature?.geometry?.type;
+                    const isPoint = geometryType === 'Point' || geometryType === 'MultiPoint';
+                    const isPolygon = geometryType === 'Polygon' || geometryType === 'MultiPolygon';
+
+                    if (isPoint) {
+                        return (
+                            <div>
+                                <label className="block text-xs text-gray-600 mb-1">Point Radius: {selectedLayer.style?.radius || 6}px</label>
+                                <input
+                                    type="range"
+                                    min="2"
+                                    max="20"
+                                    value={selectedLayer.style?.radius || 6}
+                                    onChange={(e) => handleStyleChange('radius', parseInt(e.target.value))}
+                                    className="w-full"
+                                />
+                            </div>
+                        );
+                    }
+
+                    if (isPolygon) {
+                        return (
+                            <div>
+                                <label className="block text-xs text-gray-600 mb-1">Border Width: {selectedLayer.style?.borderWidth || 2}px</label>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="10"
+                                    value={selectedLayer.style?.borderWidth || 2}
+                                    onChange={(e) => handleStyleChange('borderWidth', parseInt(e.target.value))}
+                                    className="w-full"
+                                />
+                            </div>
+                        );
+                    }
+
+                    return null;
+                })()}
 
                 {/* Icon Type */}
                 <div>
