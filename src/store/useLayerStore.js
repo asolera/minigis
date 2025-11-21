@@ -78,6 +78,48 @@ const useLayerStore = create(
                     l.id === id ? { ...l, style: { ...l.style, ...newStyle } } : l
                 )
             })),
+
+            createEmptyLayer: (name) => set((state) => {
+                const newLayer = {
+                    id: crypto.randomUUID(),
+                    name: name || 'New Layer',
+                    type: 'vector',
+                    source: {
+                        type: 'FeatureCollection',
+                        features: []
+                    },
+                    visible: true,
+                    style: {
+                        color: '#' + Math.floor(Math.random() * 16777215).toString(16),
+                        radius: 6
+                    }
+                };
+                return {
+                    layers: [...state.layers, newLayer],
+                    selectedLayerId: newLayer.id
+                };
+            }),
+
+            addFeatureToLayer: (layerId, feature) => set((state) => ({
+                layers: state.layers.map((l) => {
+                    if (l.id !== layerId) return l;
+                    return {
+                        ...l,
+                        source: {
+                            ...l.source,
+                            features: [...(l.source.features || []), feature]
+                        }
+                    };
+                })
+            })),
+
+            interactionMode: 'default', // 'default' | 'addPoint'
+            targetLayerId: null,
+
+            setInteractionMode: (mode, layerId = null) => set({
+                interactionMode: mode,
+                targetLayerId: layerId
+            }),
         }),
         {
             name: 'minigis-storage', // unique name

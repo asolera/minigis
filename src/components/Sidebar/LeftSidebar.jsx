@@ -3,6 +3,7 @@ import { Upload, FileJson, Layers, Eye, EyeOff, Trash2, Maximize, MoreVertical, 
 import useLayerStore from '../../store/useLayerStore';
 import { parseCSV, loadShapefile, createLayerFromGeoJSON } from '../../utils/importers';
 import GeoJsonModal from '../Modals/GeoJsonModal';
+import AddFeatureModal from '../Modals/AddFeatureModal';
 import LayerContextMenu from './LayerContextMenu';
 
 const LeftSidebar = () => {
@@ -20,10 +21,15 @@ const LeftSidebar = () => {
         renameLayer,
         mapViewState,
         setProjectState,
-        resetProject
+        resetProject,
+        createEmptyLayer,
+        addFeatureToLayer,
+        setInteractionMode
     } = useLayerStore();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isAddFeatureModalOpen, setIsAddFeatureModalOpen] = useState(false);
+    const [targetLayerId, setTargetLayerId] = useState(null);
     const [contextMenu, setContextMenu] = useState(null); // { x, y, layerId }
 
     const csvInputRef = useRef(null);
@@ -100,6 +106,29 @@ const LeftSidebar = () => {
         });
     };
 
+    const handleAddFeature = (coords) => {
+        if (targetLayerId) {
+            const feature = {
+                type: "Feature",
+                properties: {
+                    id: crypto.randomUUID(),
+                    addedAt: new Date().toISOString()
+                },
+                geometry: {
+                    type: "Point",
+                    coordinates: [coords.lon, coords.lat]
+                }
+            };
+            addFeatureToLayer(targetLayerId, feature);
+        }
+    };
+
+    const handleEnableClickMode = () => {
+        if (targetLayerId) {
+            setInteractionMode('addPoint', targetLayerId);
+        }
+    };
+
     const handleMenuAction = (action, layerId, value) => {
         switch (action) {
             case 'zoom':
@@ -122,6 +151,10 @@ const LeftSidebar = () => {
             case 'rename':
                 renameLayer(layerId, value);
                 break;
+            case 'addFeature':
+                setTargetLayerId(layerId);
+                setIsAddFeatureModalOpen(true);
+                break;
             default:
                 break;
         }
@@ -133,6 +166,13 @@ const LeftSidebar = () => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onAdd={handleUrlAdd}
+            />
+
+            <AddFeatureModal
+                isOpen={isAddFeatureModalOpen}
+                onClose={() => setIsAddFeatureModalOpen(false)}
+                onAdd={handleAddFeature}
+                onEnableClickMode={handleEnableClickMode}
             />
 
             {contextMenu && (
@@ -191,6 +231,13 @@ const LeftSidebar = () => {
                     >
                         <FileJson size={20} className="text-gray-600 group-hover:text-blue-600 mb-1" />
                         <span className="text-xs text-gray-600 group-hover:text-blue-600">GeoJSON</span>
+                    </button>
+                    <button
+                        onClick={() => createEmptyLayer()}
+                        className="flex flex-col items-center justify-center p-2 bg-white border border-gray-200 rounded hover:bg-blue-50 hover:border-blue-300 transition-colors group"
+                    >
+                        <FilePlus size={20} className="text-gray-600 group-hover:text-blue-600 mb-1" />
+                        <span className="text-xs text-gray-600 group-hover:text-blue-600">Empty</span>
                     </button>
                 </div>
 

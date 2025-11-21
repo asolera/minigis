@@ -7,7 +7,7 @@ import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import OSM from 'ol/source/OSM';
 import GeoJSON from 'ol/format/GeoJSON';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
 import { defaults as defaultControls } from 'ol/control';
 import useLayerStore from '../../store/useLayerStore';
 import { getFeatureStyle } from '../../utils/styleHelpers';
@@ -53,6 +53,26 @@ const MapComponent = () => {
 
     // Click Interaction
     mapInstance.current.on('click', (evt) => {
+      const { interactionMode, targetLayerId, setInteractionMode, addFeatureToLayer } = useLayerStore.getState();
+
+      if (interactionMode === 'addPoint' && targetLayerId) {
+        const [lon, lat] = toLonLat(evt.coordinate);
+        const feature = {
+          type: "Feature",
+          properties: {
+            id: crypto.randomUUID(),
+            addedAt: new Date().toISOString()
+          },
+          geometry: {
+            type: "Point",
+            coordinates: [lon, lat]
+          }
+        };
+        addFeatureToLayer(targetLayerId, feature);
+        setInteractionMode('default');
+        return;
+      }
+
       const feature = mapInstance.current.forEachFeatureAtPixel(evt.pixel, (feature, layer) => {
         return { feature, layer };
       });
@@ -146,8 +166,9 @@ const MapComponent = () => {
             zIndex: index + 1, // Base map is 0
           });
 
-          // Store ID on layer for click detection
+          // Store ID and source reference on layer
           olLayer.set('id', layerData.id);
+          olLayer.set('sourceRef', layerData.source);
 
           map.addLayer(olLayer);
           layersRef.current[layerData.id] = olLayer;
@@ -163,13 +184,29 @@ const MapComponent = () => {
 
         // Update Style
         olLayer.setStyle((feature) => getFeatureStyle(feature, layerData.style));
+
+        // Update Source if changed
+        if (olLayer.get('sourceRef') !== layerData.source) {
+          const source = olLayer.getSource();
+          const newFeatures = new GeoJSON().readFeatures(layerData.source, {
+            featureProjection: 'EPSG:3857'
+          });
+          source.clear();
+          source.addFeatures(newFeatures);
+          olLayer.set('sourceRef', layerData.source);
+        }
       }
     });
 
   }, [layers, mapReady]);
 
+  const { interactionMode } = useLayerStore();
+
   return (
-    <div ref={mapRef} className="w-full h-full bg-gray-200" />
+    <div
+      ref={mapRef}
+      className={`w-full h-full bg-gray-200 ${interactionMode === 'addPoint' ? 'cursor-crosshair' : ''}`}
+    />
   );
 };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Maximize, Eye, EyeOff, Trash2, ArrowUp, ArrowDown, Edit2 } from 'lucide-react';
+import { Maximize, Eye, EyeOff, Trash2, ArrowUp, ArrowDown, Edit2, PlusCircle } from 'lucide-react';
 
 const LayerContextMenu = ({ x, y, layer, onClose, onAction }) => {
     const menuRef = useRef(null);
@@ -90,6 +90,12 @@ const LayerContextMenu = ({ x, y, layer, onClose, onAction }) => {
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
             >
                 <Edit2 size={14} /> Rename
+            </button>
+            <button
+                onClick={(e) => handleAction('addFeature', e)}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+                <PlusCircle size={14} /> Add Feature
             </button>
             <div className="border-t border-gray-100 my-1"></div>
             <button
