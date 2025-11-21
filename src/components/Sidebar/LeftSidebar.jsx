@@ -4,6 +4,7 @@ import useLayerStore from '../../store/useLayerStore';
 import { parseCSV, loadShapefile, createLayerFromGeoJSON } from '../../utils/importers';
 import GeoJsonModal from '../Modals/GeoJsonModal';
 import AddFeatureModal from '../Modals/AddFeatureModal';
+import AttributeTableModal from '../Modals/AttributeTableModal';
 import LayerContextMenu from './LayerContextMenu';
 
 const LeftSidebar = () => {
@@ -29,6 +30,7 @@ const LeftSidebar = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAddFeatureModalOpen, setIsAddFeatureModalOpen] = useState(false);
+    const [isAttributeTableOpen, setIsAttributeTableOpen] = useState(false);
     const [targetLayerId, setTargetLayerId] = useState(null);
     const [contextMenu, setContextMenu] = useState(null); // { x, y, layerId }
 
@@ -155,6 +157,10 @@ const LeftSidebar = () => {
                 setTargetLayerId(layerId);
                 setIsAddFeatureModalOpen(true);
                 break;
+            case 'viewTable':
+                setTargetLayerId(layerId);
+                setIsAttributeTableOpen(true);
+                break;
             default:
                 break;
         }
@@ -173,6 +179,12 @@ const LeftSidebar = () => {
                 onClose={() => setIsAddFeatureModalOpen(false)}
                 onAdd={handleAddFeature}
                 onEnableClickMode={handleEnableClickMode}
+            />
+
+            <AttributeTableModal
+                isOpen={isAttributeTableOpen}
+                onClose={() => setIsAttributeTableOpen(false)}
+                layer={layers.find(l => l.id === targetLayerId)}
             />
 
             {contextMenu && (
