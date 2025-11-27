@@ -2,6 +2,8 @@
 
 MiniGIS is a lightweight, web-based Geographic Information System (GIS) application built with React and OpenLayers. It provides a user-friendly interface for visualizing, managing, and styling geospatial data directly in your browser.
 
+**Official Tool URL:** [https://asolera.github.io/minigis](https://asolera.github.io/minigis)
+
 ## Features
 
 ### 🗺️ Map & Layer Management
